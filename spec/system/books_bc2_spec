@@ -1,0 +1,27 @@
+require 'rails_helper'
+
+RSpec.describe "Books (BC2 attributes)", type: :system do
+    it "adds a full book with author/price/date and shows flash" do
+        visit new_book_path
+        fill_in "Title", with: "Dune"
+        fill_in "Author", with: "Frank Herbert"
+        fill_in "Price", with: "19.99"
+        select "2021", from: "book_published_date_1i"
+        select "July",  from: "book_published_date_2i"
+        select "15",    from: "book_published_date_3i"
+        click_button "Create Book"
+        expect(page).to have_content("Book was successfully created")
+        expect(page).to have_content("Dune")
+    end
+
+    it "rejects invalid price and blank author/date (rainy)" do
+        visit new_book_path
+        fill_in "Title", with: "Bad"
+        fill_in "Author", with: ""
+        fill_in "Price", with: "abc"
+        click_button "Create Book"
+        expect(page).to have_content("Author can't be blank")
+        expect(page).to have_content("Price is not a number")
+        expect(page).to have_content("Published date can't be blank")
+    end
+end
