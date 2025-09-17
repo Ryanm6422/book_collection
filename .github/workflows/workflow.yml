@@ -10,8 +10,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     env:
       RAILS_ENV: test
+      # Match database.yml expectations:
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      # Optional but helpful: make Rails use the service explicitly
+      PGHOST: localhost
+      PGPORT: 5432
 
     steps:
       - name: Check out code
@@ -33,10 +52,10 @@ jobs:
       - name: Disable Spring
         run: |
           bin/spring binstub --remove --all || true
-          export DISABLE_SPRING=1
+          echo "DISABLE_SPRING=1" >> $GITHUB_ENV
 
-      - name: Prepare DB (sqlite or pg if configured)
-        run: DISABLE_SPRING=1 bin/rails db:prepare
+      - name: Prepare DB
+        run: bin/rails db:prepare
 
       - name: RuboCop
         run: bundle exec rubocop --force-exclusion vendor/*/** --out rubocop.txt
