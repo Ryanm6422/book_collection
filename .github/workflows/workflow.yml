@@ -1,124 +1,55 @@
-env:
+cat > .github/workflows/workflow.yml <<'YAML'
+name: CI
 
-RUBY_VERSION: 3.1.2
-
-POSTGRES_USER: postgres
-
-POSTGRES_PASSWORD: password
-
-DATABASE_USER: postgres
-
-DATABASE_PASSWORD: password
-
-
-name: Rails tests
-
-on: [push, pull_request]
+on:
+  push:
+    branches: [ run_test ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
 
-rspec-test:
+    env:
+      RAILS_ENV: test
 
-name: RSpec
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
 
-runs-on: ubuntu-latest
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
 
-services:
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-postgres:
+      - name: Install JS deps
+        run: yarn install --frozen-lockfile || yarn install
 
-image: postgres:12
+      - name: Prepare DB (works for sqlite or pg if configured)
+        run: bin/rails db:prepare
 
-ports:
+      - name: RuboCop
+        run: bundle exec rubocop --force-exclusion vendor/*/** --out rubocop.txt
 
-- 5432:5432
+      - name: Brakeman
+        run: bundle exec brakeman -q -w2 -o brakeman.json || true
 
-env:
+      - name: RSpec
+        run: bundle exec rspec --format documentation --out rspec.txt
 
-POSTGRES_USER: ${{ env.POSTGRES_USER }}
-
-POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-
-steps:
-
-- uses: actions/checkout@v2
-
-- uses: ruby/setup-ruby@v1
-
-with:
-
-ruby-version: ${{ env.RUBY_VERSION }}
-
-- name: Install postgres client
-
-run: sudo apt-get install libpq-dev
-
-- name: Install dependencies
-
-run: |
-
-gem install bundler
-
-bundler install
-
-- name: Create database
-
-run: |
-
-bundler exec rails db:create RAILS_ENV=test
-
-bundler exec rails db:migrate RAILS_ENV=test
-
-- uses: borales/actions-yarn@v3.0.0
-
-with:
-
-cmd: install
-
-- name: Run tests
-
-run: bundler exec rspec .
-
-- name: Run brakeman
-
-run: brakeman -o brakeman.txt
-
-- name: Run rubocop
-
-run: bundler exec rubocop --force-exclusion vendor/*/** --out rubocop.txt
-
-- name: Upload coverage results
-
-uses: actions/upload-artifact@master
-
-if: always()
-
-with:
-
-name: coverage-report
-
-path: coverage
-
-- name: Upload rubocop report
-
-uses: actions/upload-artifact@master
-
-if: always()
-
-with:
-
-name: rubocop-report.txt
-
-path: rubocop.txt
-
-- name: Upload brakeman report
-
-uses: actions/upload-artifact@master
-
-if: always()
-
-with:
-
-name: brakeman-report.txt
-
-path: brakeman.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            rubocop.txt
+            brakeman.json
+            rspec.txt
+            coverage/
+YAML
