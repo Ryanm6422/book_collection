@@ -59,3 +59,14 @@ gem 'yaml_db'
 group :development, :test do
   gem 'rspec-rails', '~> 5.0'
 end
+
+
+group :development, :test do
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'brakeman', require: false
+end
+
+group :test do
+  gem 'simplecov', require: false
+end
