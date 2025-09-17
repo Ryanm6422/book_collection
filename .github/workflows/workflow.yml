@@ -30,8 +30,13 @@ jobs:
       - name: Install JS deps
         run: yarn install --frozen-lockfile || yarn install
 
+      - name: Disable Spring
+        run: |
+          bin/spring binstub --remove --all || true
+          export DISABLE_SPRING=1
+
       - name: Prepare DB (sqlite or pg if configured)
-        run: bin/rails db:prepare
+        run: DISABLE_SPRING=1 bin/rails db:prepare
 
       - name: RuboCop
         run: bundle exec rubocop --force-exclusion vendor/*/** --out rubocop.txt
