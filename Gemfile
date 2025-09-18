@@ -56,3 +56,17 @@ end
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem 'concurrent-ruby', '1.3.4'
 gem 'yaml_db' 
+group :development, :test do
+  gem 'rspec-rails', '~> 5.0'
+end
+
+
+group :development, :test do
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'brakeman', require: false
+end
+
+group :test do
+  gem 'simplecov', require: false
+end
