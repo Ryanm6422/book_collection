@@ -1,22 +1,19 @@
-module.exports = function (api) {
-  api.cache(true);
-  const env = api.env(); // 'development' | 'test' | 'production'
+// babel.config.js
+module.exports = (api) => {
+  // Work even if Webpacker/Babel has already configured caching
+  const env = (api && api.env) ? api.env() : process.env.BABEL_ENV || process.env.NODE_ENV;
 
-  const presets = [
-    // Let webpack handle modules
-    ['@babel/preset-env', { modules: false, useBuiltIns: 'entry', corejs: 3 }]
-  ];
-
-  // No custom plugins — keeps the build simple and avoids missing packages
-  const plugins = [];
-
-  // For tests, target current Node so jest/rails test is happy (optional)
   if (env === 'test') {
+    // Jest/rails test: target current Node
     return {
       presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
-      plugins
+      plugins: []
     };
   }
 
-  return { presets, plugins };
+  // Dev/Prod: let webpack handle modules; include polyfills via core-js@3 if you use them
+  return {
+    presets: [['@babel/preset-env', { modules: false, useBuiltIns: 'entry', corejs: 3 }]],
+    plugins: []
+  };
 };
